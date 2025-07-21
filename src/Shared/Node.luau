@@ -57,7 +57,7 @@ function Node:Generate()
 		}
 	end
 
-	if self.y ~= self.Parent.Length then
+	if self.y ~= self.Parent.Length - 1 then
 		self.Neighbors.Down = {
 			x = self.x,
 			y = self.y + 1,
@@ -71,7 +71,7 @@ function Node:Generate()
 		}
 	end
 
-	if self.x ~= self.Parent.Width then
+	if self.x ~= self.Parent.Width - 1 then
 		self.Neighbors.Right = {
 			x = self.x + 1,
 			y = self.y,

@@ -15,23 +15,32 @@ function Backtrack.new(Maze)
 	self.Maze = Maze
 	self.Stack = Stack.new()
 	self.CurrentNode = nil
+    self.StartNode = self.Maze.Nodes[0][0]
 	return self
 end
 
-function Backtrack:GetUnvistedNeighbor(Node)
+function Backtrack:GetUnvistedNeighbor()
 	local UnvistedNeighbors = {}
-	for _, Direction in Neightbors do
-		if not Node.Neighbors[Direction].Visited then
-			table.insert(UnvistedNeighbors, Node.Neighbors[Direction])
+	for _, Neighbor in self.CurrentNode.Neighbors do
+        local NeighboringNode = self.Maze.Nodes[Neighbor.x][Neighbor.y]
+
+        if not NeighboringNode then
+			continue
+		end
+
+		if not NeighboringNode.Visited then
+			table.insert(UnvistedNeighbors, NeighboringNode)
 		end
 	end
 
+    if #UnvistedNeighbors == 0 then
+        return nil
+    end
+    
 	local RandomIndex = math.random(1, #UnvistedNeighbors)
-	local RandomKey = UnvistedNeighbors[RandomIndex]
-	local RandomUnvistedNeighbor = self.CurrentNode.Neighbors[RandomKey]
-	local NewNode = self.Maze.Nodes[RandomUnvistedNeighbor.x][RandomUnvistedNeighbor.y]
+	local RandomUnvistedNeighbor = UnvistedNeighbors[RandomIndex]
 
-	return NewNode or nil
+	return RandomUnvistedNeighbor or nil
 end
 
 function Backtrack:Start()
@@ -41,22 +50,31 @@ function Backtrack:Start()
 
 	--while not self.Stack:IsEmpty() do
 	--task.wait(0.1)
+    local NewNode = self:GetUnvistedNeighbor()
+    self.Stack:Push(NewNode)
+	self.CurrentNode = self.Stack:GetTop()
+	self.CurrentNode:Visit(self.Stack:GetPrevious(), self.CurrentNode)
+    task.wait(1)
 
-	for i = 0, 30, 1 do
-		local NewNode = self:GetUnvistedNeighbor(self.CurrentNode)
+
+    while self.CurrentNode ~= self.StartNode do
+        NewNode = self:GetUnvistedNeighbor()
 
         while not NewNode do
             self.Stack:Pop()
             self.CurrentNode = self.Stack:GetTop()
-            NewNode = self:GetUnvistedNeighbor(self.CurrentNode)
+            NewNode = self:GetUnvistedNeighbor()
             task.wait(1)
+            print("Backtracking...")
         end
 
 		self.Stack:Push(NewNode)
 		self.CurrentNode = self.Stack:GetTop()
 		self.CurrentNode:Visit(self.Stack:GetPrevious(), self.CurrentNode)
-	end
-	--end
+        task.wait(1)
+    end
+
+    print("Backtracking completed.")
 end
 
 return Backtrack

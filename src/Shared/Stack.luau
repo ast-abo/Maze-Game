@@ -18,7 +18,7 @@ function Stack:Push(value)
 end
 
 function Stack:Pop()
-	if self:isEmpty() then
+	if self:IsEmpty() then
 		return nil
 	end
 
