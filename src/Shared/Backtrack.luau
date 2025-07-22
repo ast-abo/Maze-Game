@@ -1,80 +1,83 @@
 local Stack = require(game.ReplicatedStorage.Stack)
 
-local Neightbors = {
-	"Right",
-	"Left",
-	"Up",
-	"Down",
-}
-
 local Backtrack = {}
 Backtrack.__index = Backtrack
 
-function Backtrack.new(Maze)
+function Backtrack.new(Parent)
 	local self = setmetatable({}, Backtrack)
-	self.Maze = Maze
+	self.Parent = Parent
 	self.Stack = Stack.new()
 	self.CurrentNode = nil
-    self.StartNode = self.Maze.Nodes[0][0]
+    self.StartNode = {
+		x = Parent.StartNode.x,
+		y = Parent.StartNode.y,
+	}
 	return self
 end
 
-function Backtrack:GetUnvistedNeighbor()
-	local UnvistedNeighbors = {}
-	for _, Neighbor in self.CurrentNode.Neighbors do
-        local NeighboringNode = self.Maze.Nodes[Neighbor.x][Neighbor.y]
-
-        if not NeighboringNode then
-			continue
-		end
-
-		if not NeighboringNode.Visited then
-			table.insert(UnvistedNeighbors, NeighboringNode)
-		end
-	end
-
-    if #UnvistedNeighbors == 0 then
-        return nil
-    end
-    
-	local RandomIndex = math.random(1, #UnvistedNeighbors)
-	local RandomUnvistedNeighbor = UnvistedNeighbors[RandomIndex]
-
-	return RandomUnvistedNeighbor or nil
-end
-
 function Backtrack:Start()
-	self.CurrentNode = self.Maze.Nodes[self.Maze.StartNode.x][self.Maze.StartNode.y] or self.Maze.Nodes[0][0]
+	self.CurrentNode = self.Parent.Nodes[self.StartNode.x][self.StartNode.y] or self.Parent.Nodes[0][0]
+	self.StartNode = self.CurrentNode
 	self.Stack:Push(self.CurrentNode)
-	self.CurrentNode:Visit(nil, self.CurrentNode)
+	self:VisitNode()
 
-	--while not self.Stack:IsEmpty() do
-	--task.wait(0.1)
-    local NewNode = self:GetUnvistedNeighbor()
+	print("Starting backtracking...")
+
+    local NewNode = self.CurrentNode:GetUnvistedNeighbor()
     self.Stack:Push(NewNode)
 	self.CurrentNode = self.Stack:GetTop()
-	self.CurrentNode:Visit(self.Stack:GetPrevious(), self.CurrentNode)
-    task.wait(1)
-
+	self:VisitNode()
+    task.wait(self.Parent.BacktrackSpeed)
 
     while self.CurrentNode ~= self.StartNode do
-        NewNode = self:GetUnvistedNeighbor()
+        NewNode = self.CurrentNode:GetUnvistedNeighbor()
 
         while not NewNode do
             self.Stack:Pop()
             self.CurrentNode = self.Stack:GetTop()
-            NewNode = self:GetUnvistedNeighbor()
-            task.wait(1)
+
+			if not self.CurrentNode then
+				print("No more nodes to backtrack to, finished backtracking.")
+				return
+			end
+
+            NewNode = self.CurrentNode:GetUnvistedNeighbor()
+            task.wait(self.Parent.BacktrackSpeed)
             print("Backtracking...")
         end
 
 		self.Stack:Push(NewNode)
 		self.CurrentNode = self.Stack:GetTop()
-		self.CurrentNode:Visit(self.Stack:GetPrevious(), self.CurrentNode)
-        task.wait(1)
+		self:VisitNode()
+		task.wait(self.Parent.BacktrackSpeed)
+		print("Visiting node at (" .. self.CurrentNode.x .. ", " .. self.CurrentNode.y .. ")")
     end
+end
 
-    print("Backtracking completed.")
+function Backtrack:VisitNode()
+	self.CurrentNode.Visited = true
+
+	if not self.Stack:GetPrevious() then
+		return
+	end
+
+	local PreviousNode = self.Stack:GetPrevious()
+
+	if PreviousNode.x < self.CurrentNode.x then
+		self.CurrentNode.Edges.Left.Instance:Destroy()
+	end
+
+	if PreviousNode.x > self.CurrentNode.x then
+	 	self.CurrentNode.Edges.Right.Instance:Destroy()
+	end
+
+	if PreviousNode.y < self.CurrentNode.y then
+		self.CurrentNode.Edges.Top.Instance:Destroy()
+	end
+
+	if PreviousNode.y > self.CurrentNode.y then
+		self.CurrentNode.Edges.Bottom.Instance:Destroy()
+	end
 end
 
 return Backtrack

@@ -25,28 +25,28 @@ function Node.new(x: number, y: number, Parent)
 	return self
 end
 
-function Node:Visit(PreviousNode, NextNode)
-	self.Visited = true
+function Node:GetUnvistedNeighbor()
+	local UnvistedNeighbors = {}
+	for _, Neighbor in self.Neighbors do
+        local NeighboringNode = self.Parent.Nodes[Neighbor.x][Neighbor.y]
 
-	if not PreviousNode then
-		return
+        if not NeighboringNode then
+			continue
+		end
+
+		if not NeighboringNode.Visited then
+			table.insert(UnvistedNeighbors, NeighboringNode)
+		end
 	end
 
-	if PreviousNode.x < self.x then
-		self.Edges.Left.Instance:Destroy()
-	end
+    if #UnvistedNeighbors == 0 then
+        return nil
+    end
+    
+	local RandomIndex = math.random(1, #UnvistedNeighbors)
+	local RandomUnvistedNeighbor = UnvistedNeighbors[RandomIndex]
 
-	if PreviousNode.x > self.x then
-	 	self.Edges.Right.Instance:Destroy()
-	end
-
-	if PreviousNode.y < self.y then
-		self.Edges.Top.Instance:Destroy()
-	end
-
-	if PreviousNode.y > self.y then
-		self.Edges.Bottom.Instance:Destroy()
-	end
+	return RandomUnvistedNeighbor or nil
 end
 
 function Node:Generate()
@@ -116,6 +116,8 @@ function Node:Generate()
 		self.Edges.Right:Generate()
 		self.Edges.Bottom:Generate()
 	end
+
+	task.wait(self.Parent.GenerateSpeed)
 end
 
 return Node

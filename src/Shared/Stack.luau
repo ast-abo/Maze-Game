@@ -14,6 +14,10 @@ function Stack:IsEmpty()
 end
 
 function Stack:Push(value)
+	if not value then
+		return
+	end
+
 	table.insert(self._stack, value)
 end
 
